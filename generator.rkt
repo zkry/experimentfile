@@ -186,7 +186,7 @@ type Evaler interface {
 
 type DefaultEvaler struct{}
 
-func Eval(string) interface{} {
+func (e DefaultEvaler) Eval(string) interface{} {
 	return true
 }
 

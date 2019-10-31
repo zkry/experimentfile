@@ -24,7 +24,8 @@
 
 (define (logo) (cc-superimpose (filled-ellipse 45 45 #:draw-border? #f #:color "MediumTurquoise")
                                (vari-conf-circles 15 60)
-                               (vari-conf-circles 7 30)))
+                               (vari-conf-circles 7 30)
+                               (blank 880 70)))
 
 (define (save-pict the-pict name kind)
   (define bm (pict->bitmap the-pict))
