@@ -1,1 +1,0 @@
-{"distributions":[{"probabilities":[20.0,20.0],"experiments":[{"values":{"maxCampaignCPMFraction":0.9,"alphaInc":0.25,"refCTR":0.001,"alphaDec":1,"minCampaignCPMFraction":0.1},"name":"PiecewiseLinearExperiment"},{"values":{},"name":"PerfMinCTRExperiment"}],"over":"UUID"}]}
