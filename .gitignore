@@ -1,4 +1,5 @@
 *~
-*.json
-*.go
+experiment.json
+experiment.go
 compiled/
+eval-log.rktl

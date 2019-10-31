@@ -119,6 +119,7 @@ type Distribution struct {
 
 type ExperimentManager struct {
 	Distributions []Distribution `json:"distributions"`
+	InitialDistributions []Distribution
 }
 
 func loadConfig(data []byte) (*ExperimentManager, error) {
@@ -127,6 +128,7 @@ func loadConfig(data []byte) (*ExperimentManager, error) {
 	if err != nil {
 		return nil, err
 	}
+	em.InitialDistributions = em.Distributions
 	return &em, nil
 }
 
@@ -150,12 +152,12 @@ func (e *ExperimentManager) ReloadConfiguration(data []byte) error {
 
 	// Compare for combatability. New configs keys must be a superset of
 	// old configuration.
-	if len(newManager.Distributions) != len(e.Distributions) {
+	if len(newManager.Distributions) != len(e.InitialDistributions) {
 		return fmt.Errorf("new configuration doesn't have the same number of distributions.")
 	}
 
 	for i := 0; i < len(newManager.Distributions); i++ {
-		od := e.Distributions[i]
+		od := e.InitialDistributions[i]
 		nd := newManager.Distributions[i]
 		// Each old distribution experiment should exist in new one
 		for _, newExp := range nd.Experiments {

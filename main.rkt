@@ -6,7 +6,7 @@
   (strip-bindings
    (with-syntax ((out-path #'"experiment.json")
                  (out-path-go #'"experiment.go"))
-     #`(module experiment-mod experiment/expander
+     #`(module experiment-mod experimentfile/expander
          (define-values (out-distrs all-experiments out-package) #,parse-tree)
          (define out-jsexpr (distributions->jsexpr out-distrs))
          (display (info-msg out-distrs all-experiments))
@@ -24,12 +24,12 @@
     (define (handle-query key default)
       (case key
         [(color-lexer)
-         (dynamic-require 'experiment/colorer 'experiment-colorer)]
+         (dynamic-require 'experimentfile/colorer 'experiment-colorer)]
         [(drracket:toolbar-buttons)
-         (dynamic-require 'experiment/buttons 'button-list)]
+         (dynamic-require 'experimentfile/buttons 'button-list)]
         [(drracket:opt-out-toolbar-buttons)
          '(drracket:syncheck macro-stepper debug-tool)]
         [(drracket:indentation)
-         (dynamic-require 'experiment/indenter 'indent-experiment)]
+         (dynamic-require 'experimentfile/indenter 'indent-experiment)]
         [else default]))
     handle-query)
