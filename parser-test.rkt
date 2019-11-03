@@ -36,6 +36,7 @@ package bid_price
 
 experiment ExpA:
   a := 10.0
+  b := 10
 
 distribution:
   10: ExpA when `always`

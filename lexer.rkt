@@ -6,6 +6,8 @@
 
 (define-lex-abbrev digits (:+ (char-set "0123456789")))
 
+(define-lex-abbrev duration-units (:or "ns" "us" "µs" "ms" "s" "m" "h" "d"))
+
 (define-lex-abbrev ident (:seq alphabetic (:* (:or alphabetic numeric "_"))))
 
 (define-lex-abbrev reserved-terms
@@ -27,11 +29,12 @@
     (token 'DATE lexeme)]
    [(:seq numeric (:? numeric) ":" numeric numeric)
     (token 'TIME lexeme)]
+   [(:seq digits (:? (:seq "e" digits))) (token 'INTEGER (string->number lexeme))]
+   [(:seq digits duration-units) (token 'DURATION lexeme)] ;; TODO
    [(:seq (:or (:seq (:? digits) "." digits)
                (:seq digits "."))
           (:? (:seq "e" digits)))
     (token 'DECIMAL (string->number lexeme))]
-   [(:seq digits (:? (:seq "e" digits))) (token 'INTEGER (string->number lexeme))]
    [(:or "true" "false") (token 'BOOLEAN lexeme)]
    [ident (token 'IDENTIFIER (string->symbol lexeme))]
    [(from/to "\"" "\"") (token 'STRING (trim-ends "\"" lexeme "\""))]

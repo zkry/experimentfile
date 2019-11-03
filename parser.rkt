@@ -44,13 +44,15 @@ e-sum      : [e-sum ("+"|"-")] e-product
 e-product  : [e-product ("*"|"/"|"%")] e-neg
 e-neg      : ["-"] e-func-app
 e-func-app : (e-id /L-PAREN e-expr (/"," e-expr)* /R-PAREN) | e-val
-@e-val     : e-number | e-id | e-bool | /"(" e-expr /")" | e-multi-expr
+@e-val     : e-number | e-id | e-bool | e-string | /"(" e-expr /")" | e-multi-expr
 @e-number  : DECIMAL | INTEGER
 e-bool     : BOOLEAN
 @e-id      : IDENTIFIER
 @e-id-defn : IDENTIFIER
 @e-global-id-defn : IDENTIFIER
 e-no-ind   : /INDENT* /DEDENT* [/DEDENT /NEWLINE]
+
+@e-string  : STRING
 
 e-date : DATE
 e-time : TIME

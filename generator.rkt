@@ -80,13 +80,15 @@ func (e *ExperimentInstance) Is|@capitalize[name] () (*|@capitalize[name], bool)
 
 (define (go-type-of val)
   (match val
-    [(? number?) "float64"]
+    [(? (λ (x) (and (number? x) (inexact? x)))) "float64"]
+    [(? (λ (x) (and (number? x) (exact? x)))) "int"]
     [(? string?) "string"]
     [(? boolean?) "bool"]))
 
 (define (go-zero-val-of val)
   (match val
-    [(? number?) "0.0"]
+    [(? inexact?) "0.0"]
+    [(? exact?) "0"]
     [(? string?) "\"\""]
     [(? boolean?) "false"]))
 

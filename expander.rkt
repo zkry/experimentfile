@@ -331,9 +331,17 @@
                                   (make-rename-transformer #'tmp-package)])
              rest ...
              grouped ...
-             (values out-distr
-                     (filter experiment? (flatten (map (λ (e) (divide-experiment e 0.0)) all-experiments)))
-                     out-package))))]))
+
+             (let ([flattened-experiments (filter
+                                           experiment?
+                                           (flatten
+                                            (map (λ (e)
+                                                   (divide-experiment e 0.0))
+                                                 all-experiments)))])
+               (experiments-consistent? flattened-experiments)
+               (values out-distr
+                       flattened-experiments
+                       out-package)))))]))
 
 (begin-for-syntax
   (require racket/list)
