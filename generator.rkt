@@ -36,13 +36,21 @@ type |@capitalize[name] struct {
 }|))
 
 (define (get-experiment-struct name values)
-  (let (
-        (field-assign-stmts (string-join
+  (let ((field-assign-stmts (string-join
                              (indent 4 (map (λ (name.val)
-                                              (format "~a: exp.Values[\"~a\"].(~a),"
-                                                      (capitalize (symbol->string (car name.val)))
-                                                      (car name.val)
-                                                      (go-type-of (cdr name.val))))
+                                              (let* ([name (car name.val)]
+                                                     [val (cdr name.val)]
+                                                     [json-type (go-json-type-of val)])
+                                                (if json-type
+                                                    (format "~a: ~a(exp.Values[\"~a\"].(~a)),"
+                                                            (capitalize (symbol->string name))
+                                                            (go-type-of val)
+                                                            name
+                                                            json-type)
+                                                    (format "~a: exp.Values[\"~a\"].(~a),"
+                                                            (capitalize (symbol->string name))
+                                                            name
+                                                            (go-type-of val)))))
                                             (hash->list values)))
                              "\n")))
     @go|{
@@ -78,19 +86,33 @@ func (e *ExperimentInstance) Is|@capitalize[name] () (*|@capitalize[name], bool)
    flatten
    (string-join "\n")))
 
+(define (exact-number? x)
+  (and (number? x) (exact? x)))
+
+(define (inexact-number? x)
+  (and (number? x) (inexact? x)))
+
 (define (go-type-of val)
   (match val
-    [(? (λ (x) (and (number? x) (inexact? x)))) "float64"]
-    [(? (λ (x) (and (number? x) (exact? x)))) "int"]
+    [(? inexact-number?) "float64"]
+    [(? exact-number?) "int"]
     [(? string?) "string"]
-    [(? boolean?) "bool"]))
+    [(? boolean?) "bool"]
+    [(? duration?) "time.Duration"]))
 
 (define (go-zero-val-of val)
   (match val
     [(? inexact?) "0.0"]
     [(? exact?) "0"]
     [(? string?) "\"\""]
-    [(? boolean?) "false"]))
+    [(? boolean?) "false"]
+    [(? duration?) "time.Duration(0)"]))
+
+(define (go-json-type-of val)
+  (match val
+    [(? exact-number?) "float64"]
+    [(? duration?) "float64"]
+    [_ #f]))
 
 (define (render-go distrs experiments out-package out-json)
   @go|{
@@ -102,9 +124,12 @@ import (
 	"math"
 	"fmt"
 	"math/rand"
-   	"strings"
-    "reflect"
+	"strings"
+	"reflect"
+	"time"
 )
+
+var _ time.Duration // To make the time import not complain
 
 type Experiment struct {
 	Values map[string]interface{} `json:"values"`

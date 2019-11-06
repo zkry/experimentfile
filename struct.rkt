@@ -1,8 +1,17 @@
 #lang racket
 
+(require racket/generic)
+
 (provide (struct-out experiment)
          (struct-out distribution)
-         (contract-out [experiments-consistent? (-> (listof experiment?) void?)]))
+         jsonable?
+         ->json
+
+         numberable? get-number wrap-func
+         (struct-out duration)
+         (contract-out [check-experiments-types (-> (listof experiment?) any)]))
+
+
 
 ;; experiment is a name with a hashmap of names and values.
 (struct experiment (name values))
@@ -11,7 +20,23 @@
 ;; most experiments will only have one distribution but many are possible
 (struct distribution (probabilities conditions experiments over begin end))
 
-(define (experiments-consistent? experiments)
+;; jsonable is for defining custom type that can be written to JSON
+(define-generics jsonable
+  (->json jsonable))
+
+;; valable is for defining types that can be used with for expressions
+(define-generics numberable
+  (get-number numberable)
+  (wrap-func numberable))
+
+(struct duration (ns)
+  #:methods gen:jsonable
+  [(define (->json d) (duration-ns d))]
+  #:methods gen:numberable
+  [(define (get-number n) (duration-ns n))
+   (define (wrap-func n) duration)])
+
+(define (check-experiments-types experiments)
   (for/and ([base-exp (base-experiments-names experiments)])
     (let* ([exps (experiments-by-base-name experiments base-exp)])
       (if (> (length exps) 1)
@@ -56,7 +81,7 @@
   (andmap identity
           (hash-map h1 (λ (k v1)
                          (let ([v2 (hash-ref h2 k null)]
-                               [cmp-fns (list number? string? boolean?)])
+                               [cmp-fns (list number? string? boolean? duration?)])
                            (ormap (λ (f) (and (f v1) (f v2))) cmp-fns))))))
 
 (define (assert-value-types-equal e1 e2)
@@ -65,7 +90,7 @@
     (andmap identity
             (hash-map h1 (λ (k v1)
                            (let ([v2 (hash-ref h2 k null)]
-                                 [cmp-fns (list number? string? boolean?)])
+                                 [cmp-fns (list number? string? boolean? duration?)])
                              (unless (ormap (λ (f) (and (f v1) (f v2))) cmp-fns)
                                (raise-user-error
                                 (format 
@@ -79,6 +104,6 @@
                                    (hash "a" #f "b" 3 "c" 10))))
 
 (module+ test
-  (check-not-exn (λ () (experiments-consistent? experiments-fixture)))
+  (check-not-exn (λ () (check-experiments-types experiments-fixture)))
   (check-exn exn:fail?
-             (λ () (experiments-consistent? malformed-fixture))))
+             (λ () (check-experiments-types malformed-fixture))))

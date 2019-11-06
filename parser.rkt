@@ -22,7 +22,7 @@ e-relative-time : INTEGER IDENTIFIER
 e-distribution : /"distribution" /":" /NEWLINE
                  /INDENT e-distr-case /DEDENT
 e-distr-case   : ([e-distr | e-option] /NEWLINE?)+ 
-e-distr        : e-number /":" IDENTIFIER (/"when" BT_STRING)?
+e-distr        : e-strict-number /":" IDENTIFIER (/"when" BT_STRING)?
 e-option       : e-id STRING ; possible support for non-string options in future
 
 @e-statement  : e-export-param | e-var-assign | e-subexperiment
@@ -44,8 +44,9 @@ e-sum      : [e-sum ("+"|"-")] e-product
 e-product  : [e-product ("*"|"/"|"%")] e-neg
 e-neg      : ["-"] e-func-app
 e-func-app : (e-id /L-PAREN e-expr (/"," e-expr)* /R-PAREN) | e-val
-@e-val     : e-number | e-id | e-bool | e-string | /"(" e-expr /")" | e-multi-expr
-@e-number  : DECIMAL | INTEGER
+@e-val     : e-number | e-id | e-bool | e-string | e-duration | /"(" e-expr /")" | e-multi-expr
+@e-number  : DECIMAL | INTEGER | e-duration
+@e-strict-number  : DECIMAL | INTEGER
 e-bool     : BOOLEAN
 @e-id      : IDENTIFIER
 @e-id-defn : IDENTIFIER
@@ -53,6 +54,7 @@ e-bool     : BOOLEAN
 e-no-ind   : /INDENT* /DEDENT* [/DEDENT /NEWLINE]
 
 @e-string  : STRING
+@e-duration : DURATION
 
 e-date : DATE
 e-time : TIME

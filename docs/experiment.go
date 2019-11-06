@@ -1,4 +1,4 @@
-package experiment
+package bid_logic
 
 import (
         "crypto/md5"
@@ -7,8 +7,11 @@ import (
         "fmt"
         "math/rand"
         "strings"
-    "reflect"
+        "reflect"
+        "time"
 )
+
+var _ time.Duration // To make the time import not complain
 
 type Experiment struct {
         Values map[string]interface{} `json:"values"`
@@ -25,6 +28,7 @@ type Distribution struct {
 
 type ExperimentManager struct {
         Distributions []Distribution `json:"distributions"`
+        InitialDistributions []Distribution
 }
 
 func loadConfig(data []byte) (*ExperimentManager, error) {
@@ -33,6 +37,7 @@ func loadConfig(data []byte) (*ExperimentManager, error) {
         if err != nil {
                 return nil, err
         }
+        em.InitialDistributions = em.Distributions
         return &em, nil
 }
 
@@ -56,12 +61,12 @@ func (e *ExperimentManager) ReloadConfiguration(data []byte) error {
 
         // Compare for combatability. New configs keys must be a superset of
         // old configuration.
-        if len(newManager.Distributions) != len(e.Distributions) {
+        if len(newManager.Distributions) != len(e.InitialDistributions) {
                 return fmt.Errorf("new configuration doesn't have the same number of distributions.")
         }
 
         for i := 0; i < len(newManager.Distributions); i++ {
-                od := e.Distributions[i]
+                od := e.InitialDistributions[i]
                 nd := newManager.Distributions[i]
                 // Each old distribution experiment should exist in new one
                 for _, newExp := range nd.Experiments {
@@ -92,7 +97,7 @@ type Evaler interface {
 
 type DefaultEvaler struct{}
 
-func Eval(string) interface{} {
+func (e DefaultEvaler) Eval(string) interface{} {
         return true
 }
 
@@ -176,19 +181,17 @@ func (e *ExperimentInstance) ExperimentNames() []string {
         return retNames
 }
 
-type MyExperimentA struct {
-	AlphaInc	float64	
-	AlphaDec	float64	
+type StopBidderLogic struct {
+	X	int	
 }
 
 
 
-func (e *ExperimentInstance) IsMyExperimentA () (*MyExperimentA, bool) {
+func (e *ExperimentInstance) IsStopBidderLogic () (*StopBidderLogic, bool) {
         for _, exp := range e.experiments() {
-                if strings.HasPrefix(exp.Name, "MyExperimentA") {
-                        return &MyExperimentA {
-				AlphaInc: exp.Values["alphaInc"].(float64),
-				AlphaDec: exp.Values["alphaDec"].(float64),
+                if strings.HasPrefix(exp.Name, "StopBidderLogic") {
+                        return &StopBidderLogic {
+				X: int(exp.Values["x"].(float64)),
                         }, true
 
                 }
@@ -197,7 +200,7 @@ func (e *ExperimentInstance) IsMyExperimentA () (*MyExperimentA, bool) {
 }
 
 
-var initialData = []byte(`{"distributions":[{"probabilities":[10.0],"experiments":[{"values":{"alphaInc":15,"alphaDec":5},"name":"MyExperimentA"}],"conditions":[""],"over":false}]}`)
+var initialData = []byte(`{"distributions":[{"probabilities":[10.0],"experiments":[{"values":{"x":1},"name":"StopBidderLogic"}],"conditions":[""],"over":false}]}`)
 
 func probIdx(d []byte) float64 {
         h := md5.New()

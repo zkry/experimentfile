@@ -127,8 +127,24 @@
   [(_ EXPR ...) #'(list EXPR ...)])
 
 (define-macro-cases e-for-expr
-  [(_ FROM "to" TO) #'(range FROM TO)]
-  [(_ FROM "to" TO "step" STEP) #'(range FROM TO STEP)])
+  [(_ FROM "to" TO) #'(let ([from FROM]
+                            [to TO])
+                        (if (or (numberable? from) (numberable? to))
+                            (raise-user-error "must provide step clause [_ to _ step _] for non-number (ex durations) types ")
+                            (range from to)))]
+  [(_ FROM "to" TO "step" STEP) #'(let ([from FROM]
+                                        [to TO]
+                                        [step STEP])
+                                    (cond
+                                      [(and (numberable? from)
+                                            (numberable? to)
+                                            (numberable? step))
+                                           (range (get-number from) (get-number to) (get-number step))]
+                                      [(or (numberable? from)
+                                           (numberable? to)
+                                           (numberable? step))
+                                       (raise-user-error "can not mix number and non-number types (ex duration)")]
+                                      [else (range from to step)]))])
 
 ;; e-multi-expr can be used to perform some cleanup
 (define (e-multi-expr expr)
@@ -338,7 +354,7 @@
                                             (map (λ (e)
                                                    (divide-experiment e 0.0))
                                                  all-experiments)))])
-               (experiments-consistent? flattened-experiments)
+               (check-experiments-types flattened-experiments)
                (values out-distr
                        flattened-experiments
                        out-package)))))]))
@@ -420,9 +436,19 @@
                                                      (cons c res))))))))
     (distribution (map third conds-exps-probs) (map first conds-exps-probs) (map second conds-exps-probs)  over #f #f)))
 
+(define (experiment-values->jsexpr vals)
+  (define ret-hash (make-hash))
+  (hash-for-each vals (λ (k v)
+                        (hash-set! ret-hash
+                                   k
+                                   (if (jsonable? v)
+                                       (->json v)
+                                       v))))
+  ret-hash)
+
 (define (experiment->jsexpr e)
   (hash 'name (experiment-name e)
-        'values (experiment-values e)))
+        'values (experiment-values->jsexpr (experiment-values e))))
 
 (define (distribution->jsexpr d)
   (let ((probs (distribution-probabilities d))

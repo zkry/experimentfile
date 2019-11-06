@@ -1,6 +1,6 @@
 #lang racket
 
-(require brag/support)
+(require brag/support "struct.rkt")
 
 (provide lex-experiment exp-lexer)
 
@@ -30,7 +30,7 @@
    [(:seq numeric (:? numeric) ":" numeric numeric)
     (token 'TIME lexeme)]
    [(:seq digits (:? (:seq "e" digits))) (token 'INTEGER (string->number lexeme))]
-   [(:seq digits duration-units) (token 'DURATION lexeme)] ;; TODO
+   [(:seq digits duration-units) (token 'DURATION (parse-duration lexeme))]
    [(:seq (:or (:seq (:? digits) "." digits)
                (:seq digits "."))
           (:? (:seq "e" digits)))
@@ -50,6 +50,21 @@
      (cond [(void? (srcloc-token-token v)) (loop (exp-lexer in))] 
            [(eof-object? (srcloc-token-token v)) '()]
            [else (cons v (loop (exp-lexer in)))]))))
+
+;; parse-duration parses a duration string (ex 10s) and converts it into
+;; a duration struct
+(define (parse-duration dur-str)
+  (let* ([quant (string->number (first (regexp-match #rx"^[0-9]*" dur-str)))]
+         [unit (first (regexp-match #rx"[a-z]*$" dur-str))]
+         [multiplier (cond
+                       [(equal? unit "ns") 1.0]
+                       [(equal? unit "us") 1000.0]
+                       [(equal? unit "µs") 1000.0]
+                       [(equal? unit "ms") 1000000.0]
+                       [(equal? unit "s") 1e+9]
+                       [(equal? unit "m") 6e+10]
+                       [(equal? unit "d") 8.64e+13])])
+    (duration (* quant multiplier))))
 
 ;; calculate-tab-spaces calculates how many spaces a current level of
 ;; indentation should be at if followed by a tab. This is alwaysed

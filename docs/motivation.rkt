@@ -371,7 +371,7 @@
 
 (define experimentfile1 (codeblock-pict #:keep-lang-line? #f
                                         (string-join
-                                         '("#lang experiment"
+                                         '("#lang experimentfile"
                                            "experiment PiecewiseLinearExperiment:"
                                            "  refCTR :=  0.001"
                                            "  alphaDec := 1"
@@ -548,14 +548,14 @@
                                                 (send f show #t)))))
 
 (define code-examples '(("Defining Values"
-                         "#lang experiment"
+                         "#lang experimentfile"
                          "experiment MyExperimentA:"
                          "  alpha := 10"
                          ""
                          "distribution:"
                          "  10: MyExperimentA")
                         ("Variables"
-                         "#lang experiment"
+                         "#lang experimentfile"
                          "experiment MyExperimentA:"
                          "  alpha = 10"
                          "  alphaInc := alpha + 5"
@@ -564,7 +564,7 @@
                          "distribution:"
                          "  10: MyExperimentA")
                         ("Functions"
-                         "#lang experiment"
+                         "#lang experimentfile"
                          "experiment MyExperimentA:"
                          "  alphaInc := sqrt(alpha + 5)"
                          "  alphaDec := log(alpha - 5)"
@@ -572,7 +572,7 @@
                          "distribution:"
                          "  10: MyExperimentA")
                         ("Ranges"
-                         "#lang experiment"
+                         "#lang experimentfile"
                          "experiment StopBidderLogic:"
                          "  minCt := [1, 2, 3]"
                          "  stopCt := [5 to 10]"
@@ -580,7 +580,7 @@
                          "distribution:"
                          "  10: MyExperimentA")
                         ("Sub-experiments"
-                         "#lang experiment"
+                         "#lang experimentfile"
                          ""
                          "experiment StopBidderLogic:"
                          "  x := 7"
@@ -595,7 +595,7 @@
                          "  10: StopBidderLogic:")
                         
                         ("Distributions"
-                         "#lang experiment"
+                         "#lang experimentfile"
                          ""
                          "experiment StopBidderLogic:"
                          "  x := 1"
@@ -608,7 +608,7 @@
                          "  20: PiecewiseLinear")
                         
                         ("'when' cases"
-                         "#lang experiment"
+                         "#lang experimentfile"
                          ""
                          "experiment StopBidderLogic:"
                          "  x := 1"
@@ -622,7 +622,7 @@
                          "")
                         
                         ("Logic offshoots (work in progress)"
-                         "#lang experiment"
+                         "#lang experimentfile"
                          ""
                          "experiment MainBidderLogic:"
                          "  alpha := 0.9"
@@ -638,7 +638,7 @@
                          "")
                         
                         ("Code Generation Directives"
-                         "#lang experiment"
+                         "#lang experimentfile"
                          ""
                          "package bid_logic"
                          ""
@@ -649,7 +649,7 @@
                          "  10: StopBidderLogic:")
                         
                         ("Logic (Considering idea) 1"
-                         "#lang experiment"
+                         "#lang experimentfile"
                          ""
                          "experiment StopOfferSelection:"
                          "  subexperiment static:"
@@ -661,7 +661,7 @@
                          "  10: StopOfferSelection:")
 
                         ("Logic (Considering idea) 2"
-                         "#lang experiment"
+                         "#lang experimentfile"
                          ""
                          "experiment BidPriceCalculation:"
                          "  refCTR := 0.001"
@@ -693,4 +693,59 @@
                   #:background "PaleTurquoise")
      (hc-append (open-json-btn "experiment.json")
                 (open-json-btn "experiment.go")))))
-    
+
+(play-n
+ (λ (play-offer-ct play-danger-zone play-explore-zone play-diversity)
+   (let* ([offer-ct (+ (* play-offer-ct 10) 3)]
+          [offer-spread (exact-round (+ 30 (* play-offer-ct 30)))]
+          [danger-zone-begin (+ (* play-danger-zone 200) 200)]
+          [explore-zone-end (* play-explore-zone 200)]
+          [is-diverse (> play-diversity 0)]
+          
+          [time-tick (λ (x) (hc-append (blank x 1) (vline 1 10)))]
+          [x-mark (λ (x) (hc-append (blank x 1)
+                                    (cc-superimpose (rotate (filled-rectangle 10 80 #:color "red" #:border-color "red") (/ pi 4))
+                                                    (rotate (filled-rectangle 10 80 #:color "red" #:border-color "red") (* pi 1.75)))))]
+          [zone (λ (x1 x2 [color "red"]) (cellophane (hc-append (blank x1 1)
+                                                                (filled-rectangle (- x2 x1) 30 #:color color))
+                                                     0.3))]
+          [offer-group (λ (oct diverse) (foldl (λ (x acc) (pin-over acc
+                                                                    (- (random (* offer-spread 2)) offer-spread)
+                                                                    (- (random offer-spread) (/ offer-spread 2))
+                                                                    (filled-ellipse 10 10 #:color (if diverse
+                                                                                                      (random-color)
+                                                                                                      "blue"))))
+                                               (blank)
+                                               (range oct)))])
+     (vc-append (lc-superimpose
+                 (foldl (λ (x acc) (lc-superimpose acc (time-tick x)))
+                        (hc-append (vline 1 100) (hline 500 1))
+                        (range 10 500 10))
+                 (x-mark 475)
+                 (zone danger-zone-begin 500)
+                 (hc-append (blank (- danger-zone-begin 100) 1) (offer-group offer-ct is-diverse))
+                 (zone 0 explore-zone-end "green"))
+                (t "Consider the stopping conditions of the offer selection logic.")
+                (show-when play-offer-ct (item "How many offers should we find?"))
+                (show-when play-danger-zone (item "When do we quit when we've found at least one offer?"))
+                (show-when play-explore-zone (item "If we're finding many offers early, should we continue looking?"))
+                (show-when play-diversity (item "Should the offers be from a diverse set of campaigns?"))
+                (blank 1 20)
+                (show-when play-diversity (para (bt "offerCt") "x" (bt "earlyQuitTime") "x" (bt "offerExplorationTime") "x" (bt "isDiverse"))))))
+ #:title "A Practical Example")
+
+(define code (codeblock-pict (string-join (list "#lang experimentfile"
+                                                                ""
+                                                                "experiment OSTermination:"
+                                                                "  offerCt := [3 to 7]"
+                                                                "  earlyQuitTime := [300ms to 400ms step 20ms]"
+                                                                "  offerExplorationTime := [0ms to 200ms step 40ms]"
+                                                                "  isDiverse := [true, false]"
+                                                                ""
+                                                                "distribution:"
+                                                                "  20: OSTermination"
+                                                                "") "\n")))
+
+(slide
+ #:title "Creation of experiment file"
+ code)

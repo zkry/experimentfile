@@ -34,12 +34,13 @@ HERE
 (define simple #<<HERE
 package bid_price
 
-experiment ExpA:
-  a := 10.0
-  b := 10
 
+experiment MyExperimentA:
+  alpha := [1ms to 10ms step 1ms]
+  message := "hello world"
+  
 distribution:
-  10: ExpA when `always`
+  10: MyExperimentA when `always`
 HERE
   )
 
